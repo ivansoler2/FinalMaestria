@@ -3,7 +3,8 @@ import numpy as np
 
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
-BLUE = (0, 100, 255)
+BLUE = (0, 0, 255)
+RED = (255,150,0)
 GREEN = (50, 150, 50)
 PURPLE = (130, 0, 130)
 GREY = (230, 230, 230)
@@ -12,7 +13,7 @@ HORRIBLE_YELLOW = (190, 175, 50)
 BACKGROUND = BLACK
 
 
-class Dot(pygame.sprite.Sprite):
+class Dot(pygame.sprite.Sprite): #Se crea la clase para la visalización de Objetos
     def __init__(
         self,
         x,
@@ -25,15 +26,15 @@ class Dot(pygame.sprite.Sprite):
         randomize=False,
     ):
         super().__init__()
-        self.image = pygame.Surface([radius * 2, radius * 2])
-        self.image.fill(BACKGROUND)
-        pygame.draw.circle(
-            self.image, color, (radius, radius), radius
+        self.image = pygame.Surface([radius * 2, radius * 2]) #Imagen Principal
+        self.image.fill(BACKGROUND) #Fondo del tablero
+        pygame.draw.circle(#Se agregan los circulos
+            self.image, color, (radius, radius), radius #4 Parametros para los circulos
         )
 
-        self.rect = self.image.get_rect()
-        self.pos = np.array([x, y], dtype=np.float64)
-        self.vel = np.asarray(velocity, dtype=np.float64)
+        self.rect = self.image.get_rect()#Trae el área de la ventana
+        self.pos = np.array([x, y], dtype=np.float64)#Crear una variable con un arreglo float de X y Y
+        self.vel = np.asarray(velocity, dtype=np.float64)#Convierte la velocidad en un array y lo deja en vel
 
         self.killswitch_on = False
         self.recovered = False
@@ -48,7 +49,7 @@ class Dot(pygame.sprite.Sprite):
 
         x, y = self.pos
 
-        # Periodic boundary conditions
+        # Periodic boundary conditions -> Se maneja el tema de los bordes de la pantalla 
         if x < 0:
             self.pos[0] = self.WIDTH
             x = self.WIDTH
@@ -107,11 +108,12 @@ class Simulation:
         self.susceptible_container = pygame.sprite.Group()
         self.infected_container = pygame.sprite.Group()
         self.recovered_container = pygame.sprite.Group()
+        self.quarantined_container = pygame.sprite.Group()
         self.all_container = pygame.sprite.Group()
 
         self.n_susceptible = 20
         self.n_infected = 1
-        self.n_quarantined = 0
+        self.n_quarantined = 1
         self.T = 1000
         self.cycles_to_fate = 20
         self.mortality_rate = 0.2
@@ -150,11 +152,11 @@ class Simulation:
                 y,
                 self.WIDTH,
                 self.HEIGHT,
-                color=BLUE,
+                color=RED,
                 velocity=vel,
                 randomize=False,
             )
-            self.susceptible_container.add(guy)
+            self.quarantined_container.add(guy)
             self.all_container.add(guy)
 
         for i in range(self.n_infected):
