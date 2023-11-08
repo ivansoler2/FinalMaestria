@@ -56,6 +56,19 @@ class Dot(pygame.sprite.Sprite): #Se crea la clase para la visalización de Obje
 
             self.rect.x = x 
             self.rect.y = y
+        
+    def respawn(self,color,radius=5):
+        return Dot(
+            self.rect.x,
+            self.rect.y,
+            self.WIDTH,
+            self.HEIGHT,
+            color = color,
+            velocity = self.vel
+
+    )
+
+
 
 class Simulation:
     def __init__(self,width=600,height = 480):
@@ -69,8 +82,8 @@ class Simulation:
         self.quarentined_container = pygame.sprite.Group()
         self.all_container = pygame.sprite.Group()
 
-        self.n_subceptible = 20
-        self.n_infected = 1 
+        self.n_subceptible = 50
+        self.n_infected = 5 # Numero de infectados 
         #self.n_recovered = 1
         self.T = 1000
         
@@ -97,7 +110,7 @@ class Simulation:
             self.susceptible_container.add(guy)
             self.all_container.add(guy)
 
-        for i in range(self.n_infected): #Numero de individuos
+        for i in range(self.n_infected): #Numero de individuos infectados
             x= np.random.randint(0,self.WIDTH+1)
             y= np.random.randint(0,self.HEIGHT+1)
 
@@ -115,7 +128,24 @@ class Simulation:
 
             self.all_container.update()
 
+
             screen.fill(BACKGROUND)
+
+            #New Infections
+
+            collision_group = pygame.sprite.groupcollide(
+                self.susceptible_container,
+                self.infected_container,
+                True, 
+                False,
+            )
+
+            for guy in collision_group:
+                new_guy = guy.respawn(BLUE)     
+                new_guy.vel *=-1#Va a la dirección contraria a la que estaba
+                self.infected_container.add(new_guy)
+                self.all_container.add(new_guy)
+                
 
             self.all_container.draw(screen)
 
@@ -127,6 +157,6 @@ class Simulation:
 
 if __name__ == "__main__":
      covid = Simulation()
-     covid.n_subceptible = 150
+     covid.n_subceptible 
      covid.start()
 
