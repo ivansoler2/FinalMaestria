@@ -1,7 +1,7 @@
 import pygame, sys
 import numpy as np
 
-BLACK = (0, 0, 0)
+WHITE = (0, 0, 0)
 WHITE = (255, 255, 255)
 BLUE = (0, 0, 255)
 RED = (255,150,0)
@@ -10,7 +10,7 @@ PURPLE = (130, 0, 130)
 GREY = (230, 230, 230)
 HORRIBLE_YELLOW = (190, 175, 50)
 
-BACKGROUND = BLACK
+BACKGROUND = WHITE
 
 
 class Dot(pygame.sprite.Sprite): #Se crea la clase para la visalización de Objetos
@@ -20,7 +20,7 @@ class Dot(pygame.sprite.Sprite): #Se crea la clase para la visalización de Obje
         y,
         width,
         height,
-        color=BLACK,
+        color=WHITE,
         radius=5,
         velocity=[0, 0],
         randomize=False,
