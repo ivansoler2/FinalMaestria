@@ -38,6 +38,7 @@ class Dot(pygame.sprite.Sprite): #Se crea la clase para la visalización de Obje
         self.killswitch_on=False
         self.recovered = False
         self.randomize = randomize
+        self.quarentined= True
 
         self.WIDTH = width
         self.HEIGHT = height
@@ -100,12 +101,13 @@ class Dot(pygame.sprite.Sprite): #Se crea la clase para la visalización de Obje
         self.killswitch_on = True
         self.cycles_to_fate=cycles_to_fate
         self.mortality_rate=mortality_rate
-    def quarentined(self,color,radius=5):
+
+    def quarentinedF(self,w,h,color,radius=5):
         return Dot(
             self.rect.x,
             self.rect.y,
-            self.WIDTH,
-            self.HEIGHT,
+            width=w,
+            height=h,
             color = color,
             velocity = self.vel
 
@@ -131,7 +133,7 @@ class Simulation:
         self.n_quarentined=1
         #self.n_recovered = 1
         self.T = 1000
-        self.cicles_to_fate=20
+        self.cicles_to_fate=200
         self.mortality_rate = 0.2
         
     def start(self,randomize=False):
@@ -190,36 +192,59 @@ class Simulation:
             )
 
             for guy in collision_group:
-                new_guy = guy.respawn(BLUE)   
-                new_guy.vel *=-1#Va a la dirección contraria a la que estaba
-                new_guy.killswitch(
+                #new_guy = guy.respawn(BLUE)   
+                                         
+            #Quarentined
+                quarentined = []
+                if guy.quarentined:
+                    new_guy2 = guy.quarentinedF(260,80,ORANGE)   
+                    new_guy2.vel *=-1#Va a la dirección contraria a la que estaba
+                    #new_guy2.vel *=-1#Va a la dirección contraria a la que estaba
+                    self.quarentined_container.add(new_guy2)
+                    #self.recovered_container.remove(5)
+                    self.all_container.add(new_guy2)
+                    quarentined.append(guy)
+                
+                
+                new_guy2.killswitch( 
                     self.cicles_to_fate, self.mortality_rate
                 )
-                self.infected_container.add(new_guy)
-                self.all_container.add(new_guy)
+                #self.infected_container.add(new_guy)
+                #self.all_container.add(new_guy)
 
-            
-            for guy in collision_group:
-                new_guy2 = guy.respawn(ORANGE)   
-                #new_guy2.vel *=-1#Va a la dirección contraria a la que estaba
-                self.quarentined_container.add(new_guy2)
-                self.all_container.add(new_guy2)
 
-            # Recuperados
 
+            #for guy in collision_group:
+#
+            #    if guy.quarentined:
+            #        new_guy2 = guy.quarentinedF(260,80,ORANGE)   
+            #        #new_guy2.vel *=-1#Va a la dirección contraria a la que estaba
+            #        self.quarentined_container.add(new_guy2)
+            #        #self.recovered_container.remove(5)
+            #        self.all_container.add(new_guy2)
+            #        quarentined.append(guy)
+
+                #if len(quarentined)>0:
+                #    self.infected_container.remove(*quarentined)
+                #    self.all_container.remove(*quarentined)
+                    #print(quarentinedlist)
+                    #print(self.infected_container , "In" , "Qu" , self.quarentined_container)
+
+
+            # #Recuperados
             recovered = []
-
-            for guy in self.infected_container:
+            for guy in self.quarentined_container:
                 if guy.recovered:
                     new_guy = guy.respawn(PURPLE)
                     self.recovered_container.add(new_guy)
                     self.all_container.add(new_guy)
                     recovered.append(guy)
-
-            if len(recovered) > 0:
-                self.infected_container.remove(*recovered)
-                self.all_container.remove(*recovered)
-
+                if len(recovered) > 0:
+                    self.quarentined_container.remove(*recovered)
+                    self.all_container.remove(*recovered)
+            #        print(self.infected_container , "In")
+                    #print(recovered)
+#
             self.all_container.draw(screen)
 
             pygame.display.flip()
@@ -230,6 +255,6 @@ class Simulation:
 
 if __name__ == "__main__":
      covid = Simulation()
-     covid.cycles_to_fate = 800
+     covid.cycles_to_fate = 2000
      covid.start(randomize=True)
 

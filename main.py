@@ -111,8 +111,8 @@ class Simulation:
         self.quarantined_container = pygame.sprite.Group()
         self.all_container = pygame.sprite.Group()
 
-        self.n_susceptible = 20
-        self.n_infected = 1
+        self.n_susceptible = 50
+        self.n_infected = 5
         self.n_quarantined = 1
         self.T = 1000
         self.cycles_to_fate = 20
