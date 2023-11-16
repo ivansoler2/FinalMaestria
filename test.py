@@ -9,6 +9,8 @@ GREEN = (50,150,50)
 RED = (255,0,0)
 PURPLE=(130,0,130)
 ORANGE = (255,160,122)
+GREY =  (230,230,230)
+HORRIBLE_YELLOW =(190,175,50)
 
 BACKGROUND = WHITE 
 
@@ -44,6 +46,7 @@ class Dot(pygame.sprite.Sprite): #Se crea la clase para la visalización de Obje
         self.HEIGHT = height
 
     def update(self):
+            
             self.pos+= self.vel
 
             x, y = self.pos
@@ -54,12 +57,15 @@ class Dot(pygame.sprite.Sprite): #Se crea la clase para la visalización de Obje
             if x > self.WIDTH:
                 self.pos[0] = 0
                 x = 0
-            if y < 0:
-                self.pos[1] = self.HEIGHT
-                y = self.HEIGHT
+            if y < 90:
+                if x<165:
+                    self.pos[1] = self.HEIGHT
+                    y = self.HEIGHT
+                    self.pos[0] = self.WIDTH
+                    x = self.WIDTH
             if y > self.HEIGHT:
-                self.pos[1] = 0
-                y = 0
+                self.pos[1] = 90
+                y = 90
 
             self.rect.x = x 
             self.rect.y = y
@@ -86,12 +92,12 @@ class Dot(pygame.sprite.Sprite): #Se crea la clase para la visalización de Obje
 
 
         
-    def respawn(self,color,radius=5):
+    def respawn(self,w,h,color,radius=5):
         return Dot(
             self.rect.x,
             self.rect.y,
-            self.WIDTH,
-            self.HEIGHT,
+            width=w,
+            height=h,
             color = color,
             velocity = self.vel
 
@@ -169,6 +175,16 @@ class Simulation:
             self.infected_container.add(guy)
             self.all_container.add(guy)
 
+        stats = pygame.Surface(
+            (self.WIDTH // 4 , self.HEIGHT//4)
+        )
+        stats.fill(GREY)
+        stats.set_alpha(230)
+        stats_pos = (440,12)
+
+        
+
+
 
         clock = pygame.time.Clock()
 
@@ -182,6 +198,32 @@ class Simulation:
 
             screen.fill(BACKGROUND)
 
+            #uPDATE STATS
+
+            stats_height = stats.get_height()
+            stats_width = stats.get_width()
+            numero_infectados_now = len(self.quarentined_container)
+            numero_pop_now = len(self.all_container)
+            n_rec_now = len(self.recovered_container)
+            t=int((i/self.T) * stats_width)
+            y_infected = int(
+                stats_height
+                - (numero_infectados_now/numero_pop_now)*stats_height
+            )
+            y_dead = int(
+                ((self.N - numero_pop_now)/self.N)*stats_height
+            )
+            y_recoverd = int(
+                (n_rec_now / numero_pop_now) * stats_height
+           )
+            
+            stats_graph = pygame.PixelArray(stats)
+            stats_graph[t,y_infected:] = pygame.Color(*ORANGE)
+
+            stats_graph[t,:y_dead] = pygame.Color(*HORRIBLE_YELLOW)
+            stats_graph[t,y_dead:y_dead + y_recoverd] = pygame.Color(*PURPLE)
+
+
             #New Infections
 
             collision_group = pygame.sprite.groupcollide(
@@ -190,14 +232,13 @@ class Simulation:
                 True, 
                 False,
             )
-
             for guy in collision_group:
                 #new_guy = guy.respawn(BLUE)   
                                          
             #Quarentined
                 quarentined = []
                 if guy.quarentined:
-                    new_guy2 = guy.quarentinedF(260,80,ORANGE)   
+                    new_guy2 = guy.quarentinedF(160,80,ORANGE)   
                     new_guy2.vel *=-1#Va a la dirección contraria a la que estaba
                     #new_guy2.vel *=-1#Va a la dirección contraria a la que estaba
                     self.quarentined_container.add(new_guy2)
@@ -235,7 +276,7 @@ class Simulation:
             recovered = []
             for guy in self.quarentined_container:
                 if guy.recovered:
-                    new_guy = guy.respawn(PURPLE)
+                    new_guy = guy.respawn(600,480,PURPLE)
                     self.recovered_container.add(new_guy)
                     self.all_container.add(new_guy)
                     recovered.append(guy)
@@ -245,7 +286,13 @@ class Simulation:
             #        print(self.infected_container , "In")
                     #print(recovered)
 #
+
             self.all_container.draw(screen)
+
+            del stats_graph
+            stats.unlock()
+            screen.blit(stats,stats_pos)
+            print(stats_pos)
 
             pygame.display.flip()
 
@@ -255,6 +302,8 @@ class Simulation:
 
 if __name__ == "__main__":
      covid = Simulation()
+     covid.n_subceptible = 100
+     covid.n_infected = 5
      covid.cycles_to_fate = 2000
      covid.start(randomize=True)
 
