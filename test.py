@@ -1,4 +1,6 @@
 import pygame, sys
+import pandas as pd
+import sqlite3
 import numpy as np
 
 
@@ -13,6 +15,9 @@ GREY =  (230,230,230)
 HORRIBLE_YELLOW =(190,175,50)
 
 BACKGROUND = WHITE 
+pruebaInfectados = []
+pruebaTiempo=[]
+pruebaRecuperados = []
 
 class Dot(pygame.sprite.Sprite): #Se crea la clase para la visalización de Objetos
     def __init__(
@@ -56,13 +61,13 @@ class Dot(pygame.sprite.Sprite): #Se crea la clase para la visalización de Obje
                 x = self.WIDTH
             if x > self.WIDTH:
                 self.pos[0] = 0
-                x = 0
+                x = 160
             if y < 90:
                 if x<165:
-                    self.pos[1] = self.HEIGHT
-                    y = self.HEIGHT
-                    self.pos[0] = self.WIDTH
-                    x = self.WIDTH
+                    self.pos[1] = 200
+                    y = 200
+                    self.pos[0] = 600
+                    x = 600
             if y > self.HEIGHT:
                 self.pos[1] = 90
                 y = 90
@@ -108,7 +113,7 @@ class Dot(pygame.sprite.Sprite): #Se crea la clase para la visalización de Obje
         self.cycles_to_fate=cycles_to_fate
         self.mortality_rate=mortality_rate
 
-    def quarentinedF(self,w,h,color,radius=5):
+    def quarentinedF(self,w,h,color,radius=2):
         return Dot(
             self.rect.x,
             self.rect.y,
@@ -136,9 +141,9 @@ class Simulation:
 
         self.n_subceptible = 50
         self.n_infected = 5 # Numero de infectados 
-        self.n_quarentined=1
+        self.n_quarentined=0
         #self.n_recovered = 1
-        self.T = 1000
+        self.T = 700
         self.cicles_to_fate=200
         self.mortality_rate = 0.2
         
@@ -175,6 +180,16 @@ class Simulation:
             self.infected_container.add(guy)
             self.all_container.add(guy)
 
+        for i in range(self.n_quarentined): #Numero de individuos infectados
+            x= np.random.randint(0,150)
+            y= np.random.randint(0,79)
+
+            vel = np.random.rand(2) * 2 - 1
+            guy2 = Dot(x, y,160,80,color=ORANGE, velocity=vel,randomize=randomize)
+            self.infected_container.add(guy2)
+            self.all_container.add(guy2)
+
+
         stats = pygame.Surface(
             (self.WIDTH // 4 , self.HEIGHT//4)
         )
@@ -192,17 +207,20 @@ class Simulation:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     sys.exit()
-
+            pruebaTiempo.append(i)
             self.all_container.update()
 
 
             screen.fill(BACKGROUND)
 
-            #uPDATE STATS
+            #Grafica
 
             stats_height = stats.get_height()
             stats_width = stats.get_width()
             numero_infectados_now = len(self.quarentined_container)
+            numero_recuperados_now = len(self.recovered_container)
+            pruebaRecuperados.append(numero_recuperados_now)
+            pruebaInfectados.append(numero_infectados_now)
             numero_pop_now = len(self.all_container)
             n_rec_now = len(self.recovered_container)
             t=int((i/self.T) * stats_width)
@@ -223,9 +241,7 @@ class Simulation:
             stats_graph[t,:y_dead] = pygame.Color(*HORRIBLE_YELLOW)
             stats_graph[t,y_dead:y_dead + y_recoverd] = pygame.Color(*PURPLE)
 
-
-            #New Infections
-
+                
             collision_group = pygame.sprite.groupcollide(
                 self.susceptible_container,
                 self.infected_container,
@@ -250,26 +266,6 @@ class Simulation:
                 new_guy2.killswitch( 
                     self.cicles_to_fate, self.mortality_rate
                 )
-                #self.infected_container.add(new_guy)
-                #self.all_container.add(new_guy)
-
-
-
-            #for guy in collision_group:
-#
-            #    if guy.quarentined:
-            #        new_guy2 = guy.quarentinedF(260,80,ORANGE)   
-            #        #new_guy2.vel *=-1#Va a la dirección contraria a la que estaba
-            #        self.quarentined_container.add(new_guy2)
-            #        #self.recovered_container.remove(5)
-            #        self.all_container.add(new_guy2)
-            #        quarentined.append(guy)
-
-                #if len(quarentined)>0:
-                #    self.infected_container.remove(*quarentined)
-                #    self.all_container.remove(*quarentined)
-                    #print(quarentinedlist)
-                    #print(self.infected_container , "In" , "Qu" , self.quarentined_container)
 
 
             # #Recuperados
@@ -292,7 +288,7 @@ class Simulation:
             del stats_graph
             stats.unlock()
             screen.blit(stats,stats_pos)
-            print(stats_pos)
+            #print(stats_pos)
 
             pygame.display.flip()
 
@@ -300,10 +296,64 @@ class Simulation:
 
         pygame.quit()
 
+        # Creación DataFrame Pandas
+
+        df = pd.DataFrame(list(zip(pruebaTiempo,pruebaInfectados,pruebaRecuperados)),columns=["Tiempo","Infectados","Recuperados"])
+
+        #Conexión BD Datos
+
+        con = sqlite3.connect("covid.db")
+
+        #try:
+        #    con.execute("""create table individuos (
+        #                      tiempo,
+        #                      infectados,
+        #                      recuperados  
+        #                )""")
+        #    print("se creo la tabla articulos")                        
+        #except sqlite3.OperationalError:
+        #    print("La tabla articulos ya existe")                    
+        #con.close()
+
+        df.to_sql('individuos',con,if_exists='replace',index=False)
+        cursor=con.execute("Select * from individuos")
+        for fila in cursor:
+            print(fila)
+        con.close()
+
+        
+        
+        #cur = con.cursor()
+        #cur.execute("CREATE TABLE individuos(Time, Infectados, Recuperados)")
+
+
+
+
+        #print(df)
+        #print(pruebaInfectados)
+        #print("---------------------------")
+        #print(pruebaTiempo)
+        #print("---------------------------")
+        #print(pruebaRecuperados)
+        #print("---------------------------")
+        #print(len(pruebaInfectados))
+        #print(len(pruebaTiempo))
+        #print(len(pruebaRecuperados))
+    
+        
+        #for row in range (filas):
+        #        for columns in range (columnas):
+        #            print(matrix[row][columns],end = " ")
+        #        print()
+
+
+
+        #print(matrix)
+        #df.to_csv('fichero.csv',sep=';')
+
 if __name__ == "__main__":
      covid = Simulation()
      covid.n_subceptible = 100
      covid.n_infected = 5
      covid.cycles_to_fate = 2000
      covid.start(randomize=True)
-
