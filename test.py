@@ -2,6 +2,7 @@ import pygame, sys
 import pandas as pd
 import sqlite3
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 BLACK = (0,0,0)
@@ -18,6 +19,7 @@ BACKGROUND = WHITE
 pruebaInfectados = []
 pruebaTiempo=[]
 pruebaRecuperados = []
+pruebadead = []
 
 class Dot(pygame.sprite.Sprite): #Se crea la clase para la visalización de Objetos
     def __init__(
@@ -231,13 +233,13 @@ class Simulation:
             y_dead = int(
                 ((self.N - numero_pop_now)/self.N)*stats_height
             )
+            pruebadead.append(y_dead)
             y_recoverd = int(
                 (n_rec_now / numero_pop_now) * stats_height
            )
             
             stats_graph = pygame.PixelArray(stats)
             stats_graph[t,y_infected:] = pygame.Color(*ORANGE)
-
             stats_graph[t,:y_dead] = pygame.Color(*HORRIBLE_YELLOW)
             stats_graph[t,y_dead:y_dead + y_recoverd] = pygame.Color(*PURPLE)
 
@@ -296,59 +298,43 @@ class Simulation:
 
         pygame.quit()
 
-        # Creación DataFrame Pandas
-
-        df = pd.DataFrame(list(zip(pruebaTiempo,pruebaInfectados,pruebaRecuperados)),columns=["Tiempo","Infectados","Recuperados"])
 
         #Conexión BD Datos
 
         con = sqlite3.connect("covid.db")
-
-        #try:
-        #    con.execute("""create table individuos (
-        #                      tiempo,
-        #                      infectados,
-        #                      recuperados  
-        #                )""")
-        #    print("se creo la tabla articulos")                        
-        #except sqlite3.OperationalError:
-        #    print("La tabla articulos ya existe")                    
+        #cursor = con.execute("Drop table individuos")
+        try:
+            con.execute("""create table individuos (
+                              tiempo,
+                              infectados,
+                              recuperados,
+                              fallecidos  
+                        )""")
+            print("se creo la tabla individuos")                        
+        except sqlite3.OperationalError:
+            print("La tabla individuos ya existe")                    
         #con.close()
 
-        df.to_sql('individuos',con,if_exists='replace',index=False)
+        df = pd.DataFrame(list(zip(pruebaTiempo,pruebaInfectados,pruebaRecuperados,pruebadead)),columns=["Tiempo","Infectados","Recuperados","Fallecidos"])
+        df.to_sql('individuos',con,if_exists='replace',index=True)
         cursor=con.execute("Select * from individuos")
-        for fila in cursor:
-            print(fila)
-        con.close()
+        #for fila in cursor:
+        #    print(fila)
+        #con.close()
+
+        sql = """select Tiempo,Infectados,Recuperados,Fallecidos from individuos"""
+        data = pd.read_sql(sql,con)
+        plt.plot(data.Tiempo,data.Infectados,label = "Infectados")
+        plt.plot(data.Tiempo,data.Recuperados,label = "Recuperados")
+        plt.plot(data.Tiempo,data.Fallecidos,label = "Fallecidos")
+        plt.legend()
+        plt.title("Distribución de Individuos")
+        plt.show()
 
         
-        
-        #cur = con.cursor()
-        #cur.execute("CREATE TABLE individuos(Time, Infectados, Recuperados)")
+        # Creación DataFrame Pandas
 
-
-
-
-        #print(df)
-        #print(pruebaInfectados)
-        #print("---------------------------")
-        #print(pruebaTiempo)
-        #print("---------------------------")
-        #print(pruebaRecuperados)
-        #print("---------------------------")
-        #print(len(pruebaInfectados))
-        #print(len(pruebaTiempo))
-        #print(len(pruebaRecuperados))
-    
-        
-        #for row in range (filas):
-        #        for columns in range (columnas):
-        #            print(matrix[row][columns],end = " ")
-        #        print()
-
-
-
-        #print(matrix)
+        #df = pd.DataFrame(list(zip(pruebaTiempo,pruebaInfectados,pruebaRecuperados)),columns=["Tiempo","Infectados","Recuperados","Fallecidos"])
         #df.to_csv('fichero.csv',sep=';')
 
 if __name__ == "__main__":
